@@ -16,7 +16,7 @@ def create_database():
     # Create plavki table
     cursor.execute("""
     CREATE TABLE plavki (
-        id TEXT PRIMARY KEY,
+        id INTEGER PRIMARY KEY,
         uchet_number TEXT,
         date DATE,
         plavka_number TEXT NOT NULL,
@@ -37,7 +37,7 @@ def create_database():
     cursor.execute("""
     CREATE TABLE sectors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        plavka_id TEXT,
+        plavka_id INTEGER,
         sector_name TEXT,
         sector_number INTEGER,
         heating_time TIME,

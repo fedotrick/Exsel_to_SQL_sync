@@ -9,35 +9,58 @@ def connect_to_db():
     conn.execute('PRAGMA foreign_keys = ON')
     return conn
 
+def format_date(date_str):
+    """
+    Преобразует дату в формат '%d.%m.%Y'.
+    Если дата не может быть преобразована, возвращает None.
+    """
+    if pd.isna(date_str):
+        return None
+    try:
+        # Пробуем различные форматы даты
+        for date_format in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d.%m.%Y']:
+            try:
+                date_obj = datetime.strptime(str(date_str), date_format)
+                return date_obj.strftime('%d.%m.%Y')
+            except ValueError:
+                continue
+        print(f"Неизвестный формат даты: {date_str}")
+        return None
+    except Exception as e:
+        print(f"Ошибка при обработке даты {date_str}: {str(e)}")
+        return None
+
+def format_time(time_str):
+    """
+    Преобразует время в формат '%H:%M'.
+    Если время не может быть преобразовано, возвращает None.
+    """
+    if pd.isna(time_str):
+        return None
+    try:
+        # Пробуем различные форматы времени
+        for time_format in ['%H:%M:%S', '%H:%M']:
+            try:
+                time_obj = datetime.strptime(str(time_str), time_format)
+                return time_obj.strftime('%H:%M')
+            except ValueError:
+                continue
+        print(f"Неизвестный формат времени: {time_str}")
+        return None
+    except Exception as e:
+        print(f"Ошибка при обработке времени {time_str}: {str(e)}")
+        return None
+
 def read_excel_data():
     """Read data from Excel file"""
     return pd.read_excel('plavka.xlsx')
 
-def convert_time(time_value):
-    """Convert time values to string format"""
-    if pd.isna(time_value):
-        return None
-    if isinstance(time_value, str):
-        return time_value
-    try:
-        if isinstance(time_value, datetime):
-            return time_value.strftime('%H:%M:%S')
-        return str(time_value)
-    except:
-        return None
-
-def convert_date(date_value):
-    """Convert date values to string format YYYY-MM-DD"""
-    if pd.isna(date_value):
-        return None
-    try:
-        if isinstance(date_value, str):
-            return date_value
-        if isinstance(date_value, datetime):
-            return date_value.strftime('%Y-%m-%d')
-        return str(date_value)
-    except:
-        return None
+def format_date_in_dataframe(df, date_column):
+    """
+    Преобразует все даты в указанном столбце DataFrame в формат '%d.%m.%Y'.
+    """
+    df[date_column] = df[date_column].apply(format_date)
+    return df
 
 def convert_float(value):
     """Convert float values, handling NaN"""
@@ -49,10 +72,10 @@ def convert_float(value):
         return None
 
 def convert_id(id_value):
-    """Convert ID values to string, handling NaN"""
+    """Convert ID values to integer, handling NaN"""
     if pd.isna(id_value):
         return None
-    return str(id_value).strip()
+    return int(id_value)  # Убираем .strip(), так как он не нужен для чисел
 
 def sync_data():
     # Connect to database
@@ -81,7 +104,7 @@ def sync_data():
             """, (
                 plavka_id,
                 str(row['Учетный_номер']) if pd.notna(row['Учетный_номер']) else None,
-                convert_date(row['Плавка_дата']),
+                format_date(row['Плавка_дата']),
                 str(row['Номер_плавки']) if pd.notna(row['Номер_плавки']) else None,
                 str(row['Номер_кластера']) if pd.notna(row['Номер_кластера']) else None,
                 str(row['Старший_смены_плавки']) if pd.notna(row['Старший_смены_плавки']) else None,
@@ -108,9 +131,9 @@ def sync_data():
                         plavka_id,
                         sector,
                         int(sector_number) if pd.notna(sector_number) else None,
-                        convert_time(row[f'Плавка_время_прогрева_ковша_{sector}']),
-                        convert_time(row[f'Плавка_время_перемещения_{sector}']),
-                        convert_time(row[f'Плавка_время_заливки_{sector}']),
+                        format_time(row[f'Плавка_время_прогрева_ковша_{sector}']),
+                        format_time(row[f'Плавка_время_перемещения_{sector}']),
+                        format_time(row[f'Плавка_время_заливки_{sector}']),
                         convert_float(row[f'Плавка_температура_заливки_{sector}'])
                     ))
         except Exception as e:
